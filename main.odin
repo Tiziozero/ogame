@@ -44,7 +44,7 @@ EntityStatus :: enum {
     ESON=ESALIVE,
 };
 Ability :: struct {
-    active: int,
+    active, index: int, // it's index in the enities ablity
     cooldown, cooldown_time, cost: f32,
     init, act: AbilityHandler,
 };
@@ -209,9 +209,16 @@ get_draw_tile_f :: proc(game: ^game, i,j: int, f: f32) {
     }
     rl.DrawRectangleRec(dest,color);
 }
-entity_ability_act :: proc(e: ^Entity, index: int) {
+entity_ability_act :: proc(game: ^game, e: ^Entity, index: int) {
+    if e.abilities[index].active == 0 {
+        fmt.printfln("ability %d is inactive.", index);
+        return;
+    }
+    e.abilities[index].act(game, e.handle);
 }
 main :: proc() {
+    fmt.printfln("Hello %s", get_env("a"));
+    fmt.println("Hellp, World loop!");
     // init game/ctx
     rl.InitWindow(1200,900, "Entricity");
     defer rl.CloseWindow();
@@ -237,9 +244,19 @@ main :: proc() {
     };
     enemy1_handle := game_add_entity(&game, &enemy1);
 
-    fmt.printfln("Hello %s", get_env("a"));
-    fmt.println("Hellp, World loop!");
-    handle_player_input :: proc(p: ^Entity, dt: f32) {
+   // player abilities
+   {
+       a: Ability;
+          a.active = 1;
+          a.index = 0;
+          a.act = proc(game: ^game, owner_handle: int) {
+              fmt.println("called act for ability.");
+          };
+          p := &game.entities[player_handle];
+             p.abilities[0] = a;
+   }
+
+    handle_player_input :: proc(game: ^game, p: ^Entity, dt: f32) {
         pv: vec2;
         if rl.IsKeyDown(.A) {
             pv.x -= 1;
@@ -252,6 +269,9 @@ main :: proc() {
         }
         if rl.IsKeyDown(.S) {
             pv.y += 1;
+        }
+        if rl.IsMouseButtonPressed(.LEFT) {
+            entity_ability_act(game, p, 0);
         }
         pv = rl.Vector2Normalize(pv);
         p.body.x += pv.x * p.speed * dt;
@@ -271,7 +291,7 @@ main :: proc() {
         }
         // get dt
         game.dt = get_dt();
-        handle_player_input(&game.entities[player_handle], game.dt);
+        handle_player_input(&game, &game.entities[player_handle], game.dt);
         for handle, e in game.entities {
             e.update(&game, handle);
         }
