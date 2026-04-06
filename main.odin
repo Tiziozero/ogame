@@ -202,9 +202,9 @@ get_draw_tile_f :: proc(game: ^game, i,j: int, f: f32) {
     color : rl.Color;
     if c == 1 {
         color = rl.WHITE
-    } else if color == 2 {
+    } else if c == 2 {
         color = rl.RED
-    } else {
+    } else if c == 0 {
         color = rl.BLUE
     }
     rl.DrawRectangleRec(dest,color);
@@ -216,13 +216,15 @@ entity_ability_act :: proc(game: ^game, e: ^Entity, index: int) {
     }
     e.abilities[index].act(game, e.handle);
 }
+// isometric fn: I(x,y)=((x-y)/\sqrt{2},(x+y)/(\sqrt{2}*k))
+// for future bs
 main :: proc() {
     fmt.printfln("Hello %s", get_env("a"));
     fmt.println("Hellp, World loop!");
     // init game/ctx
     rl.InitWindow(1200,900, "Entricity");
     defer rl.CloseWindow();
-    // rl.SetTargetFPS(60);
+    rl.SetTargetFPS(60);
 
     game := game_new();
 
@@ -299,12 +301,13 @@ main :: proc() {
         rl.BeginDrawing();
         rl.ClearBackground(rl.BLACK);
         { // draw bg
-            f :f32= 1; // scale factor
+            f :f32 = 5; // scale factor
             player := game.entities[player_handle];
-            px: = int(player.body.x / cells);
-            py: = int(player.body.y / cells);
-            for i in px-20..=px+20 {
-                for j in py-20..=py+20 {
+            px: = int(player.body.x / (cells*f)); // multiply cells by factor
+            py: = int(player.body.y / (cells*f));
+            range := 10
+            for i in px-range..=px+range {
+                for j in py-range..=py+range {
                     // if i < 0 || j < 0 {continue;}
                     // if i >= 128 || j >= 128 {continue;}
                     get_draw_tile_f(&game, i, j, f);
