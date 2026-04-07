@@ -31,22 +31,18 @@ game :: struct {
     dt: f32,
     textures: map[int]t2d,
     frame_arena: mem.Dynamic_Arena,
-    wmap: [dynamic]Tile,
+    projectiles :[dynamic]Projectile,
+    effects :[dynamic]Effect,
+    // wmap: [dynamic]Tile,
 };
 
 EntityHandler :: proc(game: ^game, handle: int);
-AbilityHandler :: proc(game: ^game, owner_handle: int);
 
 EntityStatus :: enum {
     ESDEAD = 0,
     ESALIVE,
     ESDYING,
     ESON=ESALIVE,
-};
-Ability :: struct {
-    active, index: int, // it's index in the enities ablity
-    cooldown, cooldown_time, cost: f32,
-    init, act: AbilityHandler,
 };
 Entity :: struct {
     status: EntityStatus,
@@ -214,11 +210,16 @@ entity_ability_act :: proc(game: ^game, e: ^Entity, index: int) {
         fmt.printfln("ability %d is inactive.", index);
         return;
     }
-    e.abilities[index].act(game, e.handle);
+    ctx : AbilityCtx;
+    // e.abilities[index].act(ctx, e.handle);
 }
 // isometric fn: I(x,y)=((x-y)/\sqrt{2},(x+y)/(\sqrt{2}*k))
 // for future bs
 main :: proc() {
+    // a = 1.1 - 1.7 seems to be ok-sih? defo rework. lower number are awkward
+    for i in 0..=100 {
+        fmt.printfln(" === %3d === %10f", i, scale_damage(f32(i),100,5, 104_420, 1.7));
+    }
     fmt.printfln("Hello %s", get_env("a"));
     fmt.println("Hellp, World loop!");
     // init game/ctx
@@ -249,13 +250,10 @@ main :: proc() {
    // player abilities
    {
        a: Ability;
-          a.active = 1;
-          a.index = 0;
-          a.act = proc(game: ^game, owner_handle: int) {
-              fmt.println("called act for ability.");
-          };
-          p := &game.entities[player_handle];
-             p.abilities[0] = a;
+       a.active = 1;
+       a.index = 0;
+       p := &game.entities[player_handle];
+       p.abilities[0] = a;
    }
 
     handle_player_input :: proc(game: ^game, p: ^Entity, dt: f32) {
